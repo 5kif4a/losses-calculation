@@ -48,12 +48,25 @@ const switches = [degree45switch, degree90switch, degree135switch];
 // Обработчики
 
 /**
- * @description Функция, очищающая график
+ * @description Функция, удаляющая линии с графика
  */
-function clearGraph() {
-  while (graphDiv.data.length > 0) {
-    Plotly.deleteTraces(GRAPH_ELEM_ID, [0]);
+function deleteGraphTraces() {
+  if (graphDiv.data.length > 0) {
+    Plotly.newPlot(GRAPH_ELEM_ID, [], layout, config);
   }
+}
+
+/**
+ * @description Функция, сбрасывающая оси графика
+ */
+function resetGraphAxis() {
+  const update = {
+    "xaxis.range": [-1, 7],
+    "yaxis.range": [-1, 4],
+    "xaxis.autorange": true,
+    "yaxis.autorange": true,
+  };
+  Plotly.relayout(GRAPH_ELEM_ID, update);
 }
 
 /**
@@ -71,7 +84,20 @@ function resetValues() {
     _switch.checked = true;
   }
 
-  Plotly.deleteTraces(GRAPH_ELEM_ID, 0);
+  linearApproximationInput.value = "";
+
+  deleteGraphTraces();
+  resetGraphAxis();
+}
+
+/**
+ * @description Функция валидации значении в полях
+ */
+function validateInputs() {
+  return inputs.every((input) => {
+    const number = Number(input.value);
+    return number >= 0 && number <= 7;
+  });
 }
 
 /**
@@ -153,6 +179,14 @@ function calculateAndDraw() {
   // очищаем консоль
   console.clear();
 
+  // Валидация
+  const valuesIsValid = validateInputs();
+
+  if (!valuesIsValid) {
+    alert("Количество углов должно быть в диапазоне от 0 до 7");
+    return;
+  }
+
   let _trace = {
     x: [],
     y: [],
@@ -184,6 +218,8 @@ function calculateAndDraw() {
   // Значения по оси Y (средние значения)
   let _values = [];
 
+  const keys = Object.keys(values[currentWaveLength]);
+
   for (let i = 0; i <= maxAngleCount; i++) {
     let sum = 0;
 
@@ -195,6 +231,10 @@ function calculateAndDraw() {
       if (_angleCount >= maxAngleCount && switches[j].checked) {
         sum += values[currentWaveLength][keys[j]][i];
       }
+
+      // const idx = _angleCount >= maxAngleCount && switches[j].checked ? i : 0;
+
+      // sum += values[currentWaveLength][keys[j]][idx];
     }
 
     _values.push(sum);
@@ -223,7 +263,7 @@ function calculateAndDraw() {
     name: "R2=".concat((Math.round(lr.r2 * 10000) / 10000).toString()),
   };
 
-  clearGraph();
+  deleteGraphTraces();
 
   Plotly.addTraces(GRAPH_ELEM_ID, _trace);
   Plotly.addTraces(GRAPH_ELEM_ID, fit);
