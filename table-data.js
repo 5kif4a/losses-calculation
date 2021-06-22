@@ -1,5 +1,5 @@
 // Константы
-const GRAPH_ELEM_ID = "graph";
+const TABLE_DATA_GRAPH_ELEM_ID = "table-data-graph";
 
 const waveLength1310nmValues = {
   deg45means: [0.0365, 0.0378, 0.0411, 0.0457, 0.0498, 0.0531, 0.0562, 0.0591],
@@ -39,7 +39,7 @@ let degree135switch = document.getElementById("135degSwitch");
 
 let linearApproximationInput = document.getElementById("linear-approximation");
 
-let graphDiv = document.getElementById(GRAPH_ELEM_ID);
+let tableDataGraphDiv = document.getElementById(TABLE_DATA_GRAPH_ELEM_ID);
 
 const inputs = [degree45input, degree90input, degree135input];
 const inputIds = ["45degInput", "90degInput", "135degInput"];
@@ -51,8 +51,8 @@ const switches = [degree45switch, degree90switch, degree135switch];
  * @description Функция, удаляющая линии с графика
  */
 function deleteGraphTraces() {
-  if (graphDiv.data.length > 0) {
-    Plotly.newPlot(GRAPH_ELEM_ID, [], layout, config);
+  if (tableDataGraphDiv.data.length > 0) {
+    Plotly.newPlot(TABLE_DATA_GRAPH_ELEM_ID, [], tableDataGraphLayout, config);
   }
 }
 
@@ -66,7 +66,7 @@ function resetGraphAxis() {
     "xaxis.autorange": true,
     "yaxis.autorange": true,
   };
-  Plotly.relayout(GRAPH_ELEM_ID, update);
+  Plotly.relayout(TABLE_DATA_GRAPH_ELEM_ID, update);
 }
 
 /**
@@ -140,39 +140,6 @@ function handleToggleInput(inputId) {
 }
 
 /**
- * Функция расчета линейной регрессии
- * @param {number[]} x Значения по оси X
- * @param {number[]} y Значения по оси Y
- * @returns number
- */
-function linearRegression(x, y) {
-  var lr = {};
-  var n = y.length;
-  var sum_x = 0;
-  var sum_y = 0;
-  var sum_xy = 0;
-  var sum_xx = 0;
-  var sum_yy = 0;
-
-  for (var i = 0; i < y.length; i++) {
-    sum_x += x[i];
-    sum_y += y[i];
-    sum_xy += x[i] * y[i];
-    sum_xx += x[i] * x[i];
-    sum_yy += y[i] * y[i];
-  }
-
-  lr["sl"] = (n * sum_xy - sum_x * sum_y) / (n * sum_xx - sum_x * sum_x);
-  lr["off"] = (sum_y - lr.sl * sum_x) / n;
-  lr["r2"] = Math.pow(
-    (n * sum_xy - sum_x * sum_y) /
-      Math.sqrt((n * sum_xx - sum_x * sum_x) * (n * sum_yy - sum_y * sum_y)),
-    2
-  );
-
-  return lr;
-}
-/**
  * @description Функция расчета и отрисовки графика
  */
 function calculateAndDraw() {
@@ -193,16 +160,6 @@ function calculateAndDraw() {
     name: "График потерь",
   };
 
-  // получаем массив кол-ва углов
-  const angleCounts = switches.map((_switch, index) => {
-    return _switch.checked ? Number(inputs[index].value) : 0;
-  });
-
-  // получаем максимальное кол-во углов
-  const maxAngleCount = Math.max(...angleCounts);
-
-  console.log(`Максимальное количество углов: ${maxAngleCount}`);
-
   // текущая выбранная длина волны
   const currentWaveLength = waveLengthSelect.selectedIndex;
 
@@ -210,39 +167,30 @@ function calculateAndDraw() {
     `Выбранная длина волны: ${waveLengthSelect.options[currentWaveLength].text}`
   );
 
-  // Значения по оси Х (значения кол-ва углов)
-  _trace.x = [...Array(maxAngleCount + 1).keys()];
-
-  console.log(`Значения по оси X: [${_trace.x.join(", ")}]`);
-
   // Значения по оси Y (средние значения)
   let _values = [];
 
   const keys = Object.keys(values[currentWaveLength]);
 
-  for (let i = 0; i <= maxAngleCount; i++) {
-    let sum = 0;
-
-    for (let j = 0; j < angleCounts.length; j++) {
-      const _angleCount = angleCounts[j];
-
-      const keys = Object.keys(values[currentWaveLength]);
-
-      if (_angleCount >= maxAngleCount && switches[j].checked) {
-        sum += values[currentWaveLength][keys[j]][i];
+  for (const [idx, input] of inputs.entries()) {
+    if (switches[idx].checked) {
+      for (let i = 0; i <= Number(input.value); i++) {
+        const value = values[currentWaveLength][keys[idx]][i];
+        _values.push(value);
       }
-
-      // const idx = _angleCount >= maxAngleCount && switches[j].checked ? i : 0;
-
-      // sum += values[currentWaveLength][keys[j]][idx];
     }
-
-    _values.push(sum);
   }
 
   _trace.y = _values;
 
   console.log(`Значения по оси Y: [${_trace.y.join(", ")}]`);
+
+  // Значения по оси Х (значения кол-ва углов)
+  _trace.x = [...Array(_values.length).keys()];
+
+  console.log(`Значения по оси X: [${_trace.x.join(", ")}]`);
+
+  console.log(`Кол-во x: ${_trace.x.length} - Кол-во y: ${_trace.y.length}`);
 
   const lr = linearRegression(_trace.x, _trace.y);
 
@@ -250,7 +198,7 @@ function calculateAndDraw() {
     Math.round(lr.r2 * 10000) / 10000
   ).toString();
 
-  console.log(`Линейная аппроксимация: ${JSON.stringify(lr, null, 2)}`);
+  console.log(`Линейная аппроксимация (R2): ${JSON.stringify(lr, null, 2)}`);
 
   const fit_from = Math.min(..._trace.x);
   const fit_to = Math.max(..._trace.x);
@@ -265,8 +213,8 @@ function calculateAndDraw() {
 
   deleteGraphTraces();
 
-  Plotly.addTraces(GRAPH_ELEM_ID, _trace);
-  Plotly.addTraces(GRAPH_ELEM_ID, fit);
+  Plotly.addTraces(TABLE_DATA_GRAPH_ELEM_ID, _trace);
+  Plotly.addTraces(TABLE_DATA_GRAPH_ELEM_ID, fit);
 }
 
 // Установка обработчиков на switch-и
@@ -277,7 +225,7 @@ for (let [idx, _switch] of switches.entries()) {
 
 // График
 
-const layout = {
+const tableDataGraphLayout = {
   title: {
     text: "График потерь",
     font: {
@@ -308,4 +256,4 @@ const config = {
   responsive: true,
 };
 
-Plotly.newPlot(GRAPH_ELEM_ID, [], layout, config);
+Plotly.newPlot(TABLE_DATA_GRAPH_ELEM_ID, [], tableDataGraphLayout, config);
