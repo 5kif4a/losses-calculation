@@ -37,11 +37,11 @@ let degree45switch = document.getElementById("45degSwitch");
 let degree90switch = document.getElementById("90degSwitch");
 let degree135switch = document.getElementById("135degSwitch");
 
-let linearApproximationInput = document.getElementById("linear-approximation");
+let linearApproximationInputT = document.getElementById("table-data-linear-approximation");
 
 let tableDataGraphDiv = document.getElementById(TABLE_DATA_GRAPH_ELEM_ID);
 
-const inputs = [degree45input, degree90input, degree135input];
+const inputsT = [degree45input, degree90input, degree135input];
 const inputIds = ["45degInput", "90degInput", "135degInput"];
 const switches = [degree45switch, degree90switch, degree135switch];
 
@@ -50,16 +50,16 @@ const switches = [degree45switch, degree90switch, degree135switch];
 /**
  * @description Функция, удаляющая линии с графика
  */
-function deleteGraphTraces() {
+function deleteTableDataGraphTraces() {
   if (tableDataGraphDiv.data.length > 0) {
-    Plotly.newPlot(TABLE_DATA_GRAPH_ELEM_ID, [], tableDataGraphLayout, config);
+    Plotly.newPlot(TABLE_DATA_GRAPH_ELEM_ID, [], tableDataGraphLayout, manualGraphConfig);
   }
 }
 
 /**
  * @description Функция, сбрасывающая оси графика
  */
-function resetGraphAxis() {
+function resetTableDataGraphAxis() {
   const update = {
     "xaxis.range": [-1, 7],
     "yaxis.range": [-1, 4],
@@ -72,10 +72,10 @@ function resetGraphAxis() {
 /**
  * @description Функция, сбрасывающая значения
  */
-function resetValues() {
+function resetValuesT() {
   waveLengthSelect.selectedIndex = "0";
 
-  for (let input of inputs) {
+  for (let input of inputsT) {
     input.disabled = false;
     input.value = "0";
   }
@@ -84,17 +84,17 @@ function resetValues() {
     _switch.checked = true;
   }
 
-  linearApproximationInput.value = "";
+  linearApproximationInputT.value = "";
 
-  deleteGraphTraces();
-  resetGraphAxis();
+  deleteTableDataGraphTraces();
+  resetTableDataGraphAxis();
 }
 
 /**
  * @description Функция валидации значении в полях
  */
-function validateInputs() {
-  return inputs.every((input) => {
+function validateInputsT() {
+  return inputsT.every((input) => {
     const number = Number(input.value);
     return number >= 0 && number <= 7;
   });
@@ -115,7 +115,7 @@ function generateRandInt(max) {
 function generateRandomValues() {
   waveLengthSelect.selectedIndex = generateRandInt(2).toString(); // 3 опции
 
-  for (let input of inputs) {
+  for (let input of inputsT) {
     input.value = generateRandInt(7).toString();
   }
 
@@ -123,7 +123,7 @@ function generateRandomValues() {
     const randNumber = generateRandInt(100);
 
     switches[i].checked = !(randNumber > 50);
-    inputs[i].disabled = randNumber > 50;
+    inputsT[i].disabled = randNumber > 50;
   }
 }
 
@@ -142,12 +142,12 @@ function handleToggleInput(inputId) {
 /**
  * @description Функция расчета и отрисовки графика
  */
-function calculateAndDraw() {
+function calculateAndDrawT() {
   // очищаем консоль
   console.clear();
 
   // Валидация
-  const valuesIsValid = validateInputs();
+  const valuesIsValid = validateInputsT();
 
   if (!valuesIsValid) {
     alert("Количество углов должно быть в диапазоне от 0 до 7");
@@ -158,6 +158,13 @@ function calculateAndDraw() {
     x: [],
     y: [],
     name: "График потерь",
+    mode: 'lines+markers+text',
+    text: [],
+    textposition: 'top',
+    textfont: {
+      size: 14,
+      color: '#000'
+    },
   };
 
   // текущая выбранная длина волны
@@ -172,7 +179,7 @@ function calculateAndDraw() {
 
   const keys = Object.keys(values[currentWaveLength]);
 
-  for (const [idx, input] of inputs.entries()) {
+  for (const [idx, input] of inputsT.entries()) {
     if (switches[idx].checked) {
       for (let i = 0; i <= Number(input.value); i++) {
         const value = values[currentWaveLength][keys[idx]][i];
@@ -182,6 +189,7 @@ function calculateAndDraw() {
   }
 
   _trace.y = _values;
+  _trace.text = _values.map((v) => v.toString());
 
   console.log(`Значения по оси Y: [${_trace.y.join(", ")}]`);
 
@@ -194,7 +202,7 @@ function calculateAndDraw() {
 
   const lr = linearRegression(_trace.x, _trace.y);
 
-  linearApproximationInput.value = (
+  linearApproximationInputT.value = (
     Math.round(lr.r2 * 10000) / 10000
   ).toString();
 
@@ -211,7 +219,7 @@ function calculateAndDraw() {
     name: "R2=".concat((Math.round(lr.r2 * 10000) / 10000).toString()),
   };
 
-  deleteGraphTraces();
+  deleteTableDataGraphTraces();
 
   Plotly.addTraces(TABLE_DATA_GRAPH_ELEM_ID, _trace);
   Plotly.addTraces(TABLE_DATA_GRAPH_ELEM_ID, fit);
@@ -252,8 +260,8 @@ const tableDataGraphLayout = {
   },
 };
 
-const config = {
+const tableDataGraphConfig = {
   responsive: true,
 };
 
-Plotly.newPlot(TABLE_DATA_GRAPH_ELEM_ID, [], tableDataGraphLayout, config);
+Plotly.newPlot(TABLE_DATA_GRAPH_ELEM_ID, [], tableDataGraphLayout, tableDataGraphConfig);
