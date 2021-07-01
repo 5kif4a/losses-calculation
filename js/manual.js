@@ -70,11 +70,18 @@ function clearTableM() {
  * @description Функция, сбрасывающая значения
  */
 function resetValuesM() {
+  // очищаем консоль
+  console.clear();
+  // очищаем массив с данными
   data = [];
+  // сбрасываем поля ввода
   resetInputsM();
   linearApproximationInputM.value = "";
+  // очищаем таблицу
   clearTableM();
+  // очищаем график
   deleteManualGraphTraces();
+  // сбрасываем оси графика
   resetManualGraphAxis();
 }
 
@@ -88,8 +95,6 @@ function validateInputsM() {
 
   const valX = Number(valXInput.value);
 
-  const xValExistInTable = data.map((v) => v.x).includes(valX);
-
   if (anyInputIsEmpty) {
     alert("Ни одно поле не должно быть пустым!");
     return false;
@@ -97,11 +102,6 @@ function validateInputsM() {
 
   if (coefAValueIsZero) {
     alert("Коэффициент А не должен быть равен 0!");
-    return false;
-  }
-
-  if (xValExistInTable) {
-    alert("Данное значение Х уже было введено!");
     return false;
   }
 
@@ -115,7 +115,7 @@ function deleteRow(event) {
   const btnId = event.target.id;
   const id = btnId.split("-")[3];
 
-  data = data.filter((v) => v.id !== id);
+  data = data.filter((v) => v.id.toString() !== id);
 
   document.getElementById(`row-${id}`).remove();
 }
@@ -191,11 +191,6 @@ function addValues() {
   data.push({ id, x, y });
 
   const idx = data.length;
-
-  // if (data.length >= 1) {
-  //   coefAInput.disabled = true;
-  //   coefBInput.disabled = true;
-  // }
 
   addRow(id, idx, a, b, x, y);
 }
